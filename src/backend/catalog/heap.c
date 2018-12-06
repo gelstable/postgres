@@ -420,7 +420,8 @@ heap_create(const char *relname,
  */
 void
 CheckAttributeNamesTypes(TupleDesc tupdesc, char relkind,
-						 bool allow_system_table_mods)
+						 bool allow_system_table_mods,
+						 bool allow_anonymous_records)
 {
 	int			i;
 	int			j;
@@ -479,7 +480,8 @@ CheckAttributeNamesTypes(TupleDesc tupdesc, char relkind,
 						   TupleDescAttr(tupdesc, i)->atttypid,
 						   TupleDescAttr(tupdesc, i)->attcollation,
 						   NIL, /* assume we're creating a new rowtype */
-						   allow_system_table_mods);
+						   allow_system_table_mods,
+						   allow_anonymous_records);
 	}
 }
 
@@ -502,7 +504,8 @@ void
 CheckAttributeType(const char *attname,
 				   Oid atttypid, Oid attcollation,
 				   List *containing_rowtypes,
-				   bool allow_system_table_mods)
+				   bool allow_system_table_mods,
+				   bool allow_anonymous_records)
 {
 	char		att_typtype = get_typtype(atttypid);
 	Oid			att_typelem;
@@ -515,7 +518,9 @@ CheckAttributeType(const char *attname,
 		 * catalogs (this allows creating pg_statistic and cloning it during
 		 * VACUUM FULL)
 		 */
-		if (atttypid != ANYARRAYOID || !allow_system_table_mods)
+		if (!((atttypid == ANYARRAYOID && allow_system_table_mods) ||
+				((atttypid == RECORDOID || atttypid == RECORDARRAYOID) &&
+					allow_anonymous_records)))
 			ereport(ERROR,
 					(errcode(ERRCODE_INVALID_TABLE_DEFINITION),
 					 errmsg("column \"%s\" has pseudo-type %s",
@@ -528,7 +533,8 @@ CheckAttributeType(const char *attname,
 		 */
 		CheckAttributeType(attname, getBaseType(atttypid), attcollation,
 						   containing_rowtypes,
-						   allow_system_table_mods);
+						   allow_system_table_mods,
+						   allow_anonymous_records);
 	}
 	else if (att_typtype == TYPTYPE_COMPOSITE)
 	{
@@ -566,7 +572,8 @@ CheckAttributeType(const char *attname,
 			CheckAttributeType(NameStr(attr->attname),
 							   attr->atttypid, attr->attcollation,
 							   containing_rowtypes,
-							   allow_system_table_mods);
+							   allow_system_table_mods,
+							   allow_anonymous_records);
 		}
 
 		relation_close(relation, AccessShareLock);
@@ -580,7 +587,8 @@ CheckAttributeType(const char *attname,
 		 */
 		CheckAttributeType(attname, att_typelem, attcollation,
 						   containing_rowtypes,
-						   allow_system_table_mods);
+						   allow_system_table_mods,
+						   allow_anonymous_records);
 	}
 
 	/*
@@ -1071,7 +1079,7 @@ heap_create_with_catalog(const char *relname,
 	 */
 	Assert(IsNormalProcessingMode() || IsBootstrapProcessingMode());
 
-	CheckAttributeNamesTypes(tupdesc, relkind, allow_system_table_mods);
+	CheckAttributeNamesTypes(tupdesc, relkind, allow_system_table_mods, false);
 
 	/*
 	 * This would fail later on anyway, if the relation already exists.  But

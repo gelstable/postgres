@@ -1567,7 +1567,7 @@ addRangeTableEntryForFunction(ParseState *pstate,
 			 * Ensure that the coldeflist defines a legal set of names (no
 			 * duplicates) and datatypes (no pseudo-types, for instance).
 			 */
-			CheckAttributeNamesTypes(tupdesc, RELKIND_COMPOSITE_TYPE, false);
+			CheckAttributeNamesTypes(tupdesc, RELKIND_COMPOSITE_TYPE, false, true);
 		}
 		else
 			ereport(ERROR,
