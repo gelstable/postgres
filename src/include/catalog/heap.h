@@ -133,12 +133,14 @@ extern Form_pg_attribute SystemAttributeByName(const char *attname,
 					  bool relhasoids);
 
 extern void CheckAttributeNamesTypes(TupleDesc tupdesc, char relkind,
-						 bool allow_system_table_mods);
+						 bool allow_system_table_mods,
+						 bool allow_anonymous_records);
 
 extern void CheckAttributeType(const char *attname,
 				   Oid atttypid, Oid attcollation,
 				   List *containing_rowtypes,
-				   bool allow_system_table_mods);
+				   bool allow_system_table_mods,
+				   bool allow_anonymous_records);
 
 /* pg_partitioned_table catalog manipulation functions */
 extern void StorePartitionKey(Relation rel,

@@ -261,6 +261,8 @@ select row(1, '(1,2)')::testtype6 *<> row(1, '(1,3)')::testtype6;
 
 drop type testtype1, testtype2, testtype3, testtype4, testtype5, testtype6;
 
+-- Test anonymous rowtype in coldeflist
+SELECT q.b = row(2) FROM unnest(ARRAY[row(1, row(2))]) AS q(a int, b record);
 
 --
 -- Test case derived from bug #5716: check multiple uses of a rowtype result
