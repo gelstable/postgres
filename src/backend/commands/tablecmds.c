@@ -7286,9 +7286,18 @@ ATExecAddColumn(List **wqueue, AlteredTableInfo *tab, Relation rel,
 		else
 			defval = (Expr *) build_column_default(rel, attribute->attnum);
 
-		/* Build CoerceToDomain(NULL) expression if needed */
+		/*
+		 * Build CoerceToDomain(NULL) expression if needed.
+		 *
+		 * Gel: EdgeQL does not allow for NULL checks in domain constraints,
+		 * so we can safely skip an expensive table rewrite when adding a
+		 * nullable column without a default (though keep it for domains
+		 * declared as NOT NULL just in case something somewhere uses them
+		 * outside of EdgeQL schema).
+		 */
 		has_domain_constraints = DomainHasConstraints(attribute->atttypid);
-		if (!defval && has_domain_constraints)
+		if (!defval && has_domain_constraints &&
+			DomainIsStrict(attribute->atttypid))
 		{
 			Oid			baseTypeId;
 			int32		baseTypeMod;
